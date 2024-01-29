@@ -22,17 +22,26 @@ struct IssueFields {
 async fn main() {
     let jira_token = match env::var("GIT_JIRA_TOKEN") {
         Ok(value) => value,
-        Err(_) => exit(-2),
+        Err(_) => {
+            eprintln!("missing environment variable GIT_JIRA_TOKEN");
+            exit(-2)
+        },
     };
 
     let jira_api_url = match env::var("GIT_JIRA_API_URL") {
         Ok(value) => value,
-        Err(_) => exit(-2),
+        Err(_) => {
+            eprintln!("missing environment variable GIT_JIRA_API_URL");
+            exit(-3)
+        },
     };
 
     let jira_username = match env::var("GIT_JIRA_USERNAME") {
         Ok(value) => value,
-        Err(_) => exit(-2),
+        Err(_) => {
+            eprintln!("missing environment variable GIT_JIRA_USERNAME");
+            exit(-4)
+        },
     };
 
     // Jira ticket key (e.g., "PROJECT-123").
