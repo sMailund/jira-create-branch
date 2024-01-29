@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::env;
 use std::process::exit;
 use tokio;
+use git2::{Repository, BranchType};
 
 // Define a struct to represent the Jira issue fields you want to retrieve.
 #[derive(Debug, Serialize, Deserialize)]
@@ -77,10 +78,32 @@ async fn main() {
             // Parse the JSON response into a JiraIssue struct.
             let jira_issue: JiraIssue = response.json().await.expect("Failed to parse JSON");
 
-            // Print information about the Jira issue.
-            println!("Key: {}", jira_issue.key);
-            println!("Summary: {}", jira_issue.fields.summary);
-            // Add more fields as needed.
+            let key = jira_issue.key;
+            let summary: String = jira_issue.fields.summary
+                .replace(" ", "-")
+                .chars()
+                .filter(|c| c.is_ascii_alphanumeric() || *c == '-')
+                .collect();
+
+            let repo = Repository::open(".").expect("Failed to open repository");
+
+            let branch_name = format!("feature/{}-{}", key, summary);
+
+            // Get the current commit
+            let head = repo.head().expect("Failed to get HEAD reference");
+            let commit = repo.find_commit(head.target().expect("Failed to get target commit"))
+                .expect("Failed to find commit");
+
+            // Create a new branch
+            let branch = repo.branch(&branch_name, &commit, false)
+                .expect("Failed to create branch");
+
+            // Checkout the new branch
+            repo.checkout_head(None)
+                .expect("Failed to checkout branch");
+
+            println!("Branch '{}' created and checked out successfully.", branch_name);
+
         } else {
             println!("Error: {}", response.status());
         }
