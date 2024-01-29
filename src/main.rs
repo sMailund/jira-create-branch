@@ -1,10 +1,10 @@
 use config::{Config, Environment, File};
+use git2::{BranchType, Repository};
 use reqwest::header;
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::process::exit;
 use tokio;
-use git2::{Repository, BranchType};
 
 // Define a struct to represent the Jira issue fields you want to retrieve.
 #[derive(Debug, Serialize, Deserialize)]
@@ -26,7 +26,7 @@ async fn main() {
         Err(_) => {
             eprintln!("missing environment variable GIT_JIRA_TOKEN");
             exit(-2)
-        },
+        }
     };
 
     let jira_api_url = match env::var("GIT_JIRA_API_URL") {
@@ -34,7 +34,7 @@ async fn main() {
         Err(_) => {
             eprintln!("missing environment variable GIT_JIRA_API_URL");
             exit(-3)
-        },
+        }
     };
 
     let jira_username = match env::var("GIT_JIRA_USERNAME") {
@@ -42,7 +42,7 @@ async fn main() {
         Err(_) => {
             eprintln!("missing environment variable GIT_JIRA_USERNAME");
             exit(-4)
-        },
+        }
     };
 
     // Jira ticket key (e.g., "PROJECT-123").
@@ -79,7 +79,9 @@ async fn main() {
             let jira_issue: JiraIssue = response.json().await.expect("Failed to parse JSON");
 
             let key = jira_issue.key;
-            let summary: String = jira_issue.fields.summary
+            let summary: String = jira_issue
+                .fields
+                .summary
                 .replace(" ", "-")
                 .chars()
                 .filter(|c| c.is_ascii_alphanumeric() || *c == '-')
@@ -91,21 +93,24 @@ async fn main() {
 
             // Get the current commit
             let head = repo.head().expect("Failed to get HEAD reference");
-            let commit = repo.find_commit(head.target().expect("Failed to get target commit"))
+            let commit = repo
+                .find_commit(head.target().expect("Failed to get target commit"))
                 .expect("Failed to find commit");
 
             // Create a new branch
-            let branch = repo.branch(&branch_name, &commit, false)
+            let branch = repo
+                .branch(&branch_name, &commit, false)
                 .expect("Failed to create branch");
 
             let reference = branch.get().name().expect("failed to get branch reference");
 
             // Checkout the new branch
-            repo.set_head(reference)
-                .expect("Failed to checkout branch");
+            repo.set_head(reference).expect("Failed to checkout branch");
 
-            println!("Branch '{}' created and checked out successfully.", branch_name);
-
+            println!(
+                "Branch '{}' created and checked out successfully.",
+                branch_name
+            );
         } else {
             println!("Error: {}", response.status());
         }
