@@ -1,5 +1,6 @@
 use config::{Config, Environment, File};
 use git2::{BranchType, Repository};
+use regex::Regex;
 use reqwest::header;
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -21,6 +22,22 @@ struct IssueFields {
 
 #[tokio::main]
 async fn main() {
+    // Check if there are command-line arguments
+    let args: Vec<String> = env::args().collect();
+    if args.len() < 2 {
+        println!("Usage: cargo run <jira_issue>");
+        return;
+    }
+
+    // Extract Jira issue key using regular expression
+    let ticket_key = match extract_jira_issue_key(&args[1]) {
+        None => {
+            eprintln!("could not find jira issue key");
+            exit(-1);
+        }
+        Some(key) => key,
+    };
+
     let jira_token = match env::var("GIT_JIRA_TOKEN") {
         Ok(value) => value,
         Err(_) => {
@@ -44,9 +61,6 @@ async fn main() {
             exit(-4)
         }
     };
-
-    // Jira ticket key (e.g., "PROJECT-123").
-    let ticket_key = "NTA-1966";
 
     // Jira API URL for the specific ticket.
     let jira_url = format!("{}/rest/api/latest/issue/{}", jira_api_url, ticket_key);
@@ -116,5 +130,17 @@ async fn main() {
         }
     } else {
         println!("Failed to make the request");
+    }
+}
+
+fn extract_jira_issue_key(input: &str) -> Option<&str> {
+    // Define a regular expression pattern for Jira issue keys
+    let jira_pattern = Regex::new(r"[A-Z]+-\d+").unwrap();
+
+    // Extract the first match from the input
+    if let Some(captures) = jira_pattern.captures(input) {
+        Some(captures.get(0).unwrap().as_str())
+    } else {
+        None
     }
 }
