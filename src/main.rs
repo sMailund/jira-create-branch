@@ -98,8 +98,10 @@ async fn main() {
             let branch = repo.branch(&branch_name, &commit, false)
                 .expect("Failed to create branch");
 
+            let reference = branch.get().name().expect("failed to get branch reference");
+
             // Checkout the new branch
-            repo.checkout_head(None)
+            repo.set_head(reference)
                 .expect("Failed to checkout branch");
 
             println!("Branch '{}' created and checked out successfully.", branch_name);
