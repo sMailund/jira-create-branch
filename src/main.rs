@@ -96,6 +96,7 @@ async fn main() {
             let summary: String = jira_issue
                 .fields
                 .summary
+                .to_lowercase()
                 .replace(" ", "-")
                 .chars()
                 .filter(|c| c.is_ascii_alphanumeric() || *c == '-')
