@@ -1,5 +1,4 @@
-use config::{Config, Environment, File};
-use git2::{BranchType, Repository};
+use git2::Repository;
 use regex::Regex;
 use reqwest::header;
 use serde::{Deserialize, Serialize};
